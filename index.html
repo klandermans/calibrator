@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Calibratie Formulier</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .controls { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        select { margin-right: 10px; padding: 5px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        input[type="number"] { width: 80px; padding: 5px; }
+        input[readonly] { background-color: #f0f0f0; border: 1px solid #999; font-weight: bold; }
+        .out-of-range { color: red !important; }
+        .in-range { color: green !important; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <label>Groep: <select id="groupSelect"></select></label>
+        <label>Type: <select id="typeSelect" disabled></select></label>
+    </div>
+
+    <div id="formContainer"></div>
+
+<script>
+    // Configuratie Data met maxAllowed (percentage)
+    const config = [
+        {
+            group: 'hokofarm',
+            type: 'ric_voeding_1_32',
+            weights: [0, 20],
+            maxAllowed: 2.0, // max 2% afwijking
+            ids: Array.from({length: 32}, (_, i) => i + 1)
+        },
+        {
+            group: 'hokofarm',
+            type: 'ric_voeding_33_64',
+            weights: [0, 20],
+            maxAllowed: 2.0, // max 2% afwijking
+            ids: Array.from({length: 32}, (_, i) => i + 1)
+        },        
+        
+        {
+            group: 'hokofarm',
+            type: 'ric_transitiestal',
+            weights: [0, 20],
+            maxAllowed: 2.0, // max 2% afwijking
+            ids: Array.from({length: 32}, (_, i) => i + 1)
+        },
+        
+        {
+            group: 'trioliet',
+            type: 'keuken',
+            weights: [0, 20, 40, 60, 80, 100],
+            maxAllowed: 5.0,
+            ids: [0, 1, 2, 3, 4]
+        },
+        {
+            group: 'greenfeed',
+            type: 'lokbrok',
+            weights: [10, 10, 10],
+            maxAllowed: 10.0,
+            ids: [301, 119, 121, 131]
+        },
+        {
+            group: 'greenfeed',
+            type: 'co2',
+            weights: [0, 0], 
+            maxAllowed: 1.5,
+            ids: [301, 119, 121, 131]
+        }
+    ];
+
+    const groupSelect = document.getElementById('groupSelect');
+    const typeSelect = document.getElementById('typeSelect');
+    const formContainer = document.getElementById('formContainer');
+
+    function init() {
+        const groups = [...new Set(config.map(item => item.group))];
+        populateSelect(groupSelect, groups);
+        groupSelect.addEventListener('change', handleGroupChange);
+        typeSelect.addEventListener('change', generateForm);
+    }
+
+    function populateSelect(select, items) {
+        select.innerHTML = '<option value="">-- Kies --</option>';
+        items.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.textContent = item;
+            select.appendChild(opt);
+        });
+        select.disabled = false;
+    }
+
+    function handleGroupChange() {
+        const selectedGroup = groupSelect.value;
+        formContainer.innerHTML = '';
+        if (!selectedGroup) { typeSelect.disabled = true; return; }
+        const types = config.filter(item => item.group === selectedGroup).map(item => item.type);
+        populateSelect(typeSelect, types);
+    }
+
+    function generateForm() {
+        const settings = config.find(c => c.group === groupSelect.value && c.type === typeSelect.value);
+        if (!settings) return;
+
+        let html = `<h3>Max toegestane afwijking: ${settings.maxAllowed}%</h3>`;
+        html += '<table><thead><tr><th>Systeem</th>';
+        settings.weights.forEach((w, i) => html += `<th>Invoer ${w}g</th>`);
+        html += '<th>Max Afwijking (%)</th></tr></thead><tbody>';
+
+        settings.ids.forEach(id => {
+            html += `<tr data-max="${settings.maxAllowed}">
+                <td>${settings.type} ${id}</td>`;
+            settings.weights.forEach(w => {
+                html += `<td><input type="number" step="any" class="cal-input" data-weight="${w}"></td>`;
+            });
+            html += `<td><input type="text" class="deviation-output" readonly></td></tr>`;
+        });
+
+        formContainer.innerHTML = html + '</tbody></table>';
+        document.querySelectorAll('.cal-input').forEach(i => i.addEventListener('input', calculate));
+    }
+
+    function calculate(e) {
+        const row = e.target.closest('tr');
+        const inputs = Array.from(row.querySelectorAll('.cal-input'));
+        const output = row.querySelector('.deviation-output');
+        const maxAllowed = parseFloat(row.dataset.max);
+        
+        const zeroInput = inputs.find(i => parseFloat(i.dataset.weight) === 0);
+        let zeroVal = 0;
+        let useRelative = false;
+
+        if (zeroInput) {
+            if (zeroInput.value === '') { output.value = ''; return; }
+            zeroVal = parseFloat(zeroInput.value);
+            useRelative = true;
+        }
+
+        let maxPercError = 0;
+        let hasData = false;
+
+        inputs.forEach(input => {
+            if (input.value === '' || (useRelative && input === zeroInput)) return;
+
+            const target = parseFloat(input.dataset.weight);
+            if (target === 0) return; // voorkom division by zero
+
+            const measured = parseFloat(input.value);
+            const actualGain = useRelative ? (measured - zeroVal) : measured;
+            
+            // Bereken afwijking t.o.v. target (bv 21g op 20g target = 5% afwijking)
+            const percError = Math.abs(((actualGain - target) / target) * 100);
+
+            if (percError > maxPercError) maxPercError = percError;
+            hasData = true;
+        });
+
+        if (hasData) {
+            output.value = maxPercError.toFixed(2) + '%';
+            if (maxPercError > maxAllowed) {
+                output.className = 'deviation-output out-of-range';
+            } else {
+                output.className = 'deviation-output in-range';
+            }
+        } else {
+            output.value = '';
+            output.className = 'deviation-output';
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
