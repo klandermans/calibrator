@@ -45,3 +45,5 @@ Het formulier toont altijd de **hoogste** afwijking gevonden binnen de verschill
 - Geen externe libraries of dependencies (Vanilla JS).
 - CSS is embedded voor eenvoudige distributie.
 - Plug-in replacement architectuur: de tabel herstelt zichzelf bij wijziging van configuratie.
+
+- 
