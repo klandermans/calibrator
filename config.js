@@ -1,6 +1,6 @@
 
     // Configuratie Data met maxAllowed (percentage)
-    const config = [
+export const config = [
         {
             group: 'hokofarm',
             type: 'ric_voeding_1_32',
