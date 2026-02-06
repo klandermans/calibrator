@@ -1,5 +1,4 @@
 
-    // Configuratie Data met maxAllowed (percentage)
 export const config = [
         {
             group: 'hokofarm',
@@ -45,4 +44,4 @@ export const config = [
             maxAllowed: 1.5,
             ids: [301, 119, 121, 131]
         }
-    ];
+];
