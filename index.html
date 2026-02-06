@@ -2,54 +2,192 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Calibratie Formulier</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calibrator Pro</title>
+    <script src='config.js'></script>
     <style>
-        body { font-family: monospace; padding: 20px; }
-        .controls { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
-        select { margin-right: 10px; padding: 5px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        input[type="number"] { width: 80px; padding: 5px; }
-        input[readonly] { background-color: #f0f0f0; border: 1px solid #999; font-weight: bold; }
-        .out-of-range { color: red !important; }
-        .in-range { color: green !important; }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent-primary: #38bdf8;
+            --accent-secondary: #818cf8;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --danger: #f87171;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 16px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        select {
+            background: #334155;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            min-width: 200px;
+            transition: border 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        input[type="number"] {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--accent-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 90px;
+            transition: all 0.2s;
+        }
+
+        input[type="number"]:focus {
+            background: #1e293b;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+            outline: none;
+        }
+
+        .deviation-output {
+            background: transparent !important;
+            border: none !important;
+            font-weight: 800;
+            font-size: 1rem;
+            width: 100px;
+            text-align: right;
+        }
+
+        .in-range { color: var(--success); text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
+        .out-of-range { color: var(--danger); text-shadow: 0 0 10px rgba(248, 113, 113, 0.3); }
+
+        .system-id {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .max-info {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: var(--accent-secondary);
+        }
     </style>
 </head>
 <body>
 
+<div class="container">
+    <h1>Calibrator Pro</h1>
+
     <div class="controls">
-        <label>Groep: <select id="groupSelect"></select></label>
-        <label>Type: <select id="typeSelect" disabled></select></label>
+        <div class="control-group">
+            <label>Systeem Groep</label>
+            <select id="groupSelect"></select>
+        </div>
+        <div class="control-group">
+            <label>Type Meting</label>
+            <select id="typeSelect" disabled></select>
+        </div>
     </div>
 
     <div id="formContainer"></div>
+</div>
 
 <script>
-    // Configuratie Data met maxAllowed (percentage)
     const config = [
         {
             group: 'hokofarm',
             type: 'ric_voeding_1_32',
             weights: [0, 20],
-            maxAllowed: 2.0, // max 2% afwijking
+            maxAllowed: 2.0,
             ids: Array.from({length: 32}, (_, i) => i + 1)
         },
-        {
-            group: 'hokofarm',
-            type: 'ric_voeding_33_64',
-            weights: [0, 20],
-            maxAllowed: 2.0, // max 2% afwijking
-            ids: Array.from({length: 32}, (_, i) => i + 1)
-        },        
-        
-        {
-            group: 'hokofarm',
-            type: 'ric_transitiestal',
-            weights: [0, 20],
-            maxAllowed: 2.0, // max 2% afwijking
-            ids: Array.from({length: 32}, (_, i) => i + 1)
-        },
-        
         {
             group: 'trioliet',
             type: 'keuken',
@@ -67,7 +205,7 @@
         {
             group: 'greenfeed',
             type: 'co2',
-            weights: [0, 0], 
+            weights: [0, 100], 
             maxAllowed: 1.5,
             ids: [301, 119, 121, 131]
         }
@@ -85,11 +223,11 @@
     }
 
     function populateSelect(select, items) {
-        select.innerHTML = '<option value="">-- Kies --</option>';
+        select.innerHTML = '<option value="">-- Maak keuze --</option>';
         items.forEach(item => {
             const opt = document.createElement('option');
             opt.value = item;
-            opt.textContent = item;
+            opt.textContent = item.toUpperCase();
             select.appendChild(opt);
         });
         select.disabled = false;
@@ -107,21 +245,21 @@
         const settings = config.find(c => c.group === groupSelect.value && c.type === typeSelect.value);
         if (!settings) return;
 
-        let html = `<h3>Max toegestane afwijking: ${settings.maxAllowed}%</h3>`;
-        html += '<table><thead><tr><th>Systeem</th>';
-        settings.weights.forEach((w, i) => html += `<th>Invoer ${w}g</th>`);
-        html += '<th>Max Afwijking (%)</th></tr></thead><tbody>';
+        let html = `<div class="max-info">Target tolerantie: ± ${settings.maxAllowed}%</div>`;
+        html += '<div class="table-container"><table><thead><tr><th>ID</th>';
+        settings.weights.forEach((w, i) => html += `<th>${w}g</th>`);
+        html += '<th>Afwijking</th></tr></thead><tbody>';
 
         settings.ids.forEach(id => {
             html += `<tr data-max="${settings.maxAllowed}">
-                <td>${settings.type} ${id}</td>`;
+                <td class="system-id">#${id}</td>`;
             settings.weights.forEach(w => {
-                html += `<td><input type="number" step="any" class="cal-input" data-weight="${w}"></td>`;
+                html += `<td><input type="number" step="any" class="cal-input" data-weight="${w}" placeholder="0.00"></td>`;
             });
-            html += `<td><input type="text" class="deviation-output" readonly></td></tr>`;
+            html += `<td><input type="text" class="deviation-output" readonly value="0.00%"></td></tr>`;
         });
 
-        formContainer.innerHTML = html + '</tbody></table>';
+        formContainer.innerHTML = html + '</tbody></table></div>';
         document.querySelectorAll('.cal-input').forEach(i => i.addEventListener('input', calculate));
     }
 
@@ -136,7 +274,7 @@
         let useRelative = false;
 
         if (zeroInput) {
-            if (zeroInput.value === '') { output.value = ''; return; }
+            if (zeroInput.value === '') { output.value = '---'; return; }
             zeroVal = parseFloat(zeroInput.value);
             useRelative = true;
         }
@@ -148,12 +286,10 @@
             if (input.value === '' || (useRelative && input === zeroInput)) return;
 
             const target = parseFloat(input.dataset.weight);
-            if (target === 0) return; // voorkom division by zero
+            if (target === 0) return;
 
             const measured = parseFloat(input.value);
             const actualGain = useRelative ? (measured - zeroVal) : measured;
-            
-            // Bereken afwijking t.o.v. target (bv 21g op 20g target = 5% afwijking)
             const percError = Math.abs(((actualGain - target) / target) * 100);
 
             if (percError > maxPercError) maxPercError = percError;
@@ -162,13 +298,9 @@
 
         if (hasData) {
             output.value = maxPercError.toFixed(2) + '%';
-            if (maxPercError > maxAllowed) {
-                output.className = 'deviation-output out-of-range';
-            } else {
-                output.className = 'deviation-output in-range';
-            }
+            output.className = 'deviation-output ' + (maxPercError > maxAllowed ? 'out-of-range' : 'in-range');
         } else {
-            output.value = '';
+            output.value = '0.00%';
             output.className = 'deviation-output';
         }
     }
