@@ -1,5 +1,4 @@
-
-export const config = [
+config = [
         {
             group: 'hokofarm',
             type: 'ric_voeding_1_32',
